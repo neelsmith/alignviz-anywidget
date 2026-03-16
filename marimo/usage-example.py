@@ -15,39 +15,83 @@ app = marimo.App(width="medium")
 
 
 @app.cell
-def _():
-    import importlib
-    import json
-    import sys
-    from pathlib import Path
-
-    try:
-        from alignviz_anywidget import ParallelTextAlignWidget
-    except (ImportError, AttributeError):
-        repo_src = Path(__file__).resolve().parents[1] / "src"
-        if str(repo_src) not in sys.path:
-            sys.path.insert(0, str(repo_src))
-        for mod_name in list(sys.modules):
-            if mod_name == "alignviz_anywidget" or mod_name.startswith("alignviz_anywidget."):
-                del sys.modules[mod_name]
-        importlib.invalidate_caches()
-        from alignviz_anywidget import ParallelTextAlignWidget
-    return ParallelTextAlignWidget, json
-
-
-@app.cell
-def _():
-    import marimo as mo
-
-    return (mo,)
+def _(mo):
+    mo.md("""
+    ## Interactive anywidget demo
+    """)
+    return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Interactive anywidget demo
+    ## Demo of usage
+    """)
+    return
 
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
     Hover any highlighted term to highlight all matching aligned terms across versions.
+    """)
+    return
+
+
+@app.cell
+def _(ParallelTextAlignWidget, json, passages):
+    # Horizontal layout: single widget with layout="horizontal"
+    # This preserves cross-version hover highlighting across side-by-side columns
+    horizontal_layout = ParallelTextAlignWidget(
+        title="Aligned Terms (horizontal/side-by-side)",
+        passages_json=json.dumps(passages),
+        layout="horizontal",
+        width="100%",
+        height="260px",
+        base_highlight="#cfe8ff",
+        hover_highlight="#ffcf66",
+    )
+
+
+    return (horizontal_layout,)
+
+
+@app.cell
+def _(horizontal_layout):
+    horizontal_layout
+    return
+
+
+@app.cell
+def _(ParallelTextAlignWidget, json, passages):
+    # Vertical layout: single widget with layout="vertical"
+    vertical_layout = ParallelTextAlignWidget(
+        title="Aligned Terms (vertical/stacked)",
+        passages_json=json.dumps(passages),
+        layout="vertical",
+        width="100%",
+        height="360px",
+        base_highlight="#d9f4df",
+        hover_highlight="#ffd166",
+    )
+    return (vertical_layout,)
+
+
+@app.cell
+def _(vertical_layout):
+    vertical_layout
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ## Sample data
     """)
     return
 
@@ -85,42 +129,40 @@ def _():
     return (passages,)
 
 
-@app.cell
-def _(ParallelTextAlignWidget, json, passages):
-    # Horizontal layout: single widget with layout="horizontal"
-    # This preserves cross-version hover highlighting across side-by-side columns
-    horizontal_layout = ParallelTextAlignWidget(
-        title="Aligned Terms (horizontal/side-by-side)",
-        passages_json=json.dumps(passages),
-        layout="horizontal",
-        width="100%",
-        height="260px",
-        base_highlight="#cfe8ff",
-        hover_highlight="#ffcf66",
-    )
-
-    # Vertical layout: single widget with layout="vertical"
-    vertical_layout = ParallelTextAlignWidget(
-        title="Aligned Terms (vertical/stacked)",
-        passages_json=json.dumps(passages),
-        layout="vertical",
-        width="100%",
-        height="360px",
-        base_highlight="#d9f4df",
-        hover_highlight="#ffd166",
-    )
-    return horizontal_layout, vertical_layout
-
-
-@app.cell
-def _(horizontal_layout, mo, vertical_layout):
-    mo.vstack([
-        mo.md("### Horizontal Layout (side-by-side)"),
-        horizontal_layout,
-        mo.md("### Vertical Layout (stacked)"),
-        vertical_layout,
-    ])
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ## Imports
+    """)
     return
+
+
+@app.cell
+def _():
+    import importlib
+    import json
+    import sys
+    from pathlib import Path
+
+    try:
+        from alignviz_anywidget import ParallelTextAlignWidget
+    except (ImportError, AttributeError):
+        repo_src = Path(__file__).resolve().parents[1] / "src"
+        if str(repo_src) not in sys.path:
+            sys.path.insert(0, str(repo_src))
+        for mod_name in list(sys.modules):
+            if mod_name == "alignviz_anywidget" or mod_name.startswith("alignviz_anywidget."):
+                del sys.modules[mod_name]
+        importlib.invalidate_caches()
+        from alignviz_anywidget import ParallelTextAlignWidget
+    return ParallelTextAlignWidget, json
+
+
+@app.cell
+def _():
+    import marimo as mo
+
+    return (mo,)
 
 
 if __name__ == "__main__":
