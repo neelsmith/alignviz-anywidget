@@ -113,12 +113,6 @@ def _(ParallelTextAlignWidget, json, passages):
 
 
 @app.cell
-def _(horizontal_layout, mo):
-    mo.hstack([horizontal_layout])
-    return
-
-
-@app.cell
 def _(horizontal_layout, mo, vertical_layout):
     mo.vstack([
         mo.md("### Horizontal Layout (side-by-side)"),

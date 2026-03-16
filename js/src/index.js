@@ -20,7 +20,26 @@ function normalizeLayout(layout) {
   return clean === "horizontal" ? "horizontal" : "vertical";
 }
 
+function applyGroupLayoutStyles(group, layout, columnCount) {
+  if (layout === "horizontal") {
+    group.style.display = "grid";
+    group.style.gridTemplateColumns = `repeat(${Math.max(columnCount, 1)}, minmax(0, 1fr))`;
+    group.style.alignItems = "start";
+    group.style.columnGap = "12px";
+    group.style.rowGap = "12px";
+    group.style.flexDirection = "";
+    group.style.gap = "";
+    return;
+  }
 
+  group.style.display = "flex";
+  group.style.flexDirection = "column";
+  group.style.gap = "12px";
+  group.style.gridTemplateColumns = "";
+  group.style.alignItems = "";
+  group.style.columnGap = "";
+  group.style.rowGap = "";
+}
 
 function injectStyles() {
   const styleId = "alignviz-anywidget-style-v2";
@@ -66,8 +85,6 @@ function injectStyles() {
     }
 
     .aw-group.aw-horizontal {
-      display: grid;
-      grid-auto-flow: column;
       align-items: start;
     }
 
@@ -77,12 +94,6 @@ function injectStyles() {
       display: flex;
       flex-direction: column;
       max-width: 100%;
-    }
-
-    .aw-group.aw-horizontal .aw-column:nth-child(1),
-    .aw-group.aw-horizontal .aw-column:nth-child(2),
-    .aw-group.aw-horizontal .aw-column:nth-child(3) {
-      width: 33.333%;
     }
 
     .aw-panel {
@@ -267,8 +278,7 @@ function render({ model, el }) {
     const passages = parsePassages(model.get("passages_json"));
     const baseColor = model.get("base_highlight") || "#cfe8ff";
     const hoverColor = model.get("hover_highlight") || "#ffd166";
-    const rawLayout = model.get("layout");
-    const layout = normalizeLayout(rawLayout);
+    const layout = normalizeLayout(model.get("layout"));
 
     if (!passages.length) {
       content.innerHTML = '<div class="aw-empty">No passages to display. Set passages_json to a non-empty JSON list.</div>';
@@ -278,20 +288,7 @@ function render({ model, el }) {
     const group = document.createElement("div");
     const className = layout === "horizontal" ? "aw-group aw-horizontal" : "aw-group";
     group.className = className;
-
-    // Inline layout styles make horizontal/vertical behavior deterministic
-    // even when notebook frontends isolate or cache stylesheet state.
-    if (layout === "horizontal") {
-      group.style.display = "grid";
-      group.style.gridTemplateColumns = `repeat(${Math.max(passages.length, 1)}, minmax(0, 1fr))`;
-      group.style.alignItems = "start";
-      group.style.columnGap = "12px";
-      group.style.rowGap = "12px";
-    } else {
-      group.style.display = "flex";
-      group.style.flexDirection = "column";
-      group.style.gap = "12px";
-    }
+    applyGroupLayoutStyles(group, layout, passages.length);
 
     passages.forEach((passage, index) => {
       group.appendChild(makePanel(passage, index));
