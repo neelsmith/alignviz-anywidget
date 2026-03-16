@@ -14,7 +14,7 @@ __generated_with = "0.20.4"
 app = marimo.App(width="medium")
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Interactive anywidget demo
@@ -51,7 +51,6 @@ def _(ParallelTextAlignWidget, versions_data):
         base_highlight="#cfe8ff",
         hover_highlight="#ffcf66",
     )
-
 
     return (horizontal_layout,)
 

@@ -8,16 +8,29 @@ from typing import Any
 
 import anywidget
 import traitlets
+from markdown import markdown as render_markdown
 
 _TOKEN_SPLIT_RE = re.compile(r"(\s+)")
+
+
+def _render_label_markdown(label: str) -> str:
+	"""Render markdown label content as inline-safe HTML."""
+	escaped = html.escape(label)
+	html_out = render_markdown(escaped)
+
+	# Convert common single-paragraph markdown output into inline HTML.
+	if html_out.startswith("<p>") and html_out.endswith("</p>"):
+		return html_out[3:-4]
+	return html_out
 
 
 def _normalize_passages(passages: list[dict[str, Any]]) -> list[dict[str, str]]:
 	normalized: list[dict[str, str]] = []
 	for idx, item in enumerate(passages):
 		label = str(item.get("label", f"Version {idx + 1}"))
+		label_html = _render_label_markdown(label)
 		html_text = str(item.get("html", ""))
-		normalized.append({"label": label, "html": html_text})
+		normalized.append({"label": label, "label_html": label_html, "html": html_text})
 	return normalized
 
 
@@ -76,6 +89,7 @@ def _versions_to_passages(versions: list[dict[str, Any]]) -> list[dict[str, str]
 		passages.append(
 			{
 				"label": label,
+				"label_html": _render_label_markdown(label),
 				"html": _aligned_html_from_text(text, clean_alignments, prefix="align"),
 			}
 		)

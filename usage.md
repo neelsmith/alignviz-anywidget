@@ -25,14 +25,14 @@ from alignviz_anywidget import ParallelTextAlignWidget
 Each item is a dictionary with:
 - `text`: full version text
 - `alignments`: list of alignment groups
-- `label`: optional display name
+- `label`: optional display name, supports markdown (for example `**Latin** _v1_`)
 
 Example:
 
 ```python
 versions_data = [
     {
-        "label": "Latin",
+        "label": "**Latin** _v1_",
         "text": "Gallia est omnis divisa in partes tres",
         "alignments": [["Gallia"], ["est", "divisa"], ["partes"]],
     },
@@ -71,7 +71,7 @@ vertical = ParallelTextAlignWidget(
 ### 2) Legacy: passages format (`label` + `html`)
 
 Each item is a dictionary with:
-- `label`
+- `label` (markdown supported)
 - `html` containing aligned spans with shared `data-align-id` values
 
 Example:

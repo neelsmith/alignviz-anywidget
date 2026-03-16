@@ -110,6 +110,10 @@ function injectStyles() {
       text-transform: uppercase;
     }
 
+    .aw-panel-title p {
+      margin: 0;
+    }
+
     .aw-panel-content {
       overflow-wrap: break-word;
       word-break: break-word;
@@ -139,7 +143,11 @@ function makePanel(passage, index) {
   panel.className = "aw-panel";
   const title = document.createElement("div");
   title.className = "aw-panel-title";
-  title.textContent = passage.label || `Version ${index + 1}`;
+  if (passage.label_html) {
+    title.innerHTML = passage.label_html;
+  } else {
+    title.textContent = passage.label || `Version ${index + 1}`;
+  }
   const content = document.createElement("div");
   content.className = "aw-panel-content";
   content.innerHTML = passage.html || "";

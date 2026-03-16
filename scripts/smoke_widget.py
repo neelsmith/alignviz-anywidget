@@ -29,7 +29,7 @@ def main() -> None:
 
     versions = [
         {
-            "label": "Latin",
+            "label": "**Latin** _A_",
             "text": "Gallia est omnis divisa in partes tres",
             "alignments": [["Gallia"], ["est", "divisa"], ["partes"]],
         },
@@ -48,7 +48,9 @@ def main() -> None:
 
     converted = json.loads(viewer2.passages_json)
     assert len(converted) == 2
-    assert converted[0]["label"] == "Latin"
+    assert converted[0]["label"] == "**Latin** _A_"
+    assert "<strong>Latin</strong>" in converted[0]["label_html"]
+    assert "<em>A</em>" in converted[0]["label_html"]
     assert "data-align-id=\"align-0\"" in converted[0]["html"]
     assert viewer2.layout == "vertical"
 

@@ -12,6 +12,7 @@ license = { text = "GPL 3" }
 authors = [{ name = "Neel Smith" }]
 dependencies = [
   "anywidget>=0.9.13",
+  "markdown>=3.6",
   "traitlets>=5.14.3",
 ]
 
