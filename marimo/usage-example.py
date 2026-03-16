@@ -86,34 +86,40 @@ def _():
 
 
 @app.cell
-def _(ParallelTextAlignWidget, json, passages, mo):
-    # Horizontal layout: using mo.hstack with individual widgets per passage
-    h_widgets = [
-        ParallelTextAlignWidget(
-            title=passages[i]["label"],
-            passages_json=json.dumps([passages[i]]),
-            height="220px",
-            base_highlight="#cfe8ff",
-            hover_highlight="#ffcf66",
-        )
-        for i in range(len(passages))
-    ]
-    horizontal_layout = mo.hstack(h_widgets)
+def _(ParallelTextAlignWidget, json, passages):
+    # Horizontal layout: single widget with layout="horizontal"
+    # This preserves cross-version hover highlighting across side-by-side columns
+    horizontal_layout = ParallelTextAlignWidget(
+        title="Aligned Terms (horizontal/side-by-side)",
+        passages_json=json.dumps(passages),
+        layout="horizontal",
+        width="100%",
+        height="260px",
+        base_highlight="#cfe8ff",
+        hover_highlight="#ffcf66",
+    )
 
-    # Vertical layout: all passages stacked in one widget
+    # Vertical layout: single widget with layout="vertical"
     vertical_layout = ParallelTextAlignWidget(
         title="Aligned Terms (vertical/stacked)",
         passages_json=json.dumps(passages),
+        layout="vertical",
+        width="100%",
         height="360px",
         base_highlight="#d9f4df",
         hover_highlight="#ffd166",
     )
-
     return horizontal_layout, vertical_layout
 
 
 @app.cell
-def _(mo, horizontal_layout, vertical_layout):
+def _(horizontal_layout, mo):
+    mo.hstack([horizontal_layout])
+    return
+
+
+@app.cell
+def _(horizontal_layout, mo, vertical_layout):
     mo.vstack([
         mo.md("### Horizontal Layout (side-by-side)"),
         horizontal_layout,

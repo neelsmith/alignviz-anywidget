@@ -15,17 +15,24 @@ function cssEscape(value) {
   return String(value).replace(/[\\"']/g, "\\$&");
 }
 
+function normalizeLayout(layout) {
+  const clean = `${layout || "vertical"}`.trim().toLowerCase();
+  return clean === "horizontal" ? "horizontal" : "vertical";
+}
+
 
 
 function injectStyles() {
-  if (document.getElementById("alignviz-anywidget-style")) {
+  const styleId = "alignviz-anywidget-style-v2";
+  if (document.getElementById(styleId)) {
     return;
   }
 
   const style = document.createElement("style");
-  style.id = "alignviz-anywidget-style";
+  style.id = styleId;
   style.textContent = `
     .aw-root {
+      width: 100%;
       border: 1px solid #d8e2ec;
       border-radius: 12px;
       background: linear-gradient(180deg, #fcfdff 0%, #f5f9ff 100%);
@@ -45,6 +52,8 @@ function injectStyles() {
     }
 
     .aw-content {
+      flex: 1;
+      width: 100%;
       padding: 12px;
       overflow: auto;
     }
@@ -53,6 +62,27 @@ function injectStyles() {
       display: flex;
       flex-direction: column;
       gap: 12px;
+      width: 100%;
+    }
+
+    .aw-group.aw-horizontal {
+      display: grid;
+      grid-auto-flow: column;
+      align-items: start;
+    }
+
+    .aw-column {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      max-width: 100%;
+    }
+
+    .aw-group.aw-horizontal .aw-column:nth-child(1),
+    .aw-group.aw-horizontal .aw-column:nth-child(2),
+    .aw-group.aw-horizontal .aw-column:nth-child(3) {
+      width: 33.333%;
     }
 
     .aw-panel {
@@ -62,6 +92,8 @@ function injectStyles() {
       padding: 10px 12px;
       line-height: 1.7;
       color: #1d2a37;
+      flex-shrink: 1;
+      min-width: 0;
     }
 
     .aw-panel-title {
@@ -71,6 +103,12 @@ function injectStyles() {
       font-size: 0.86rem;
       letter-spacing: 0.02em;
       text-transform: uppercase;
+    }
+
+    .aw-panel-content {
+      overflow-wrap: break-word;
+      word-break: break-word;
+      min-width: 0;
     }
 
     .aw-term,
@@ -92,6 +130,9 @@ function injectStyles() {
 }
 
 function makePanel(passage, index) {
+  const column = document.createElement("div");
+  column.className = "aw-column";
+
   const panel = document.createElement("section");
   panel.className = "aw-panel";
 
@@ -104,7 +145,8 @@ function makePanel(passage, index) {
   content.innerHTML = passage.html || "";
 
   panel.append(title, content);
-  return panel;
+  column.appendChild(panel);
+  return column;
 }
 
 function collectAlignedTerms(root) {
@@ -197,8 +239,12 @@ function attachHoverSync(root, withId, baseColor, hoverColor) {
 function render({ model, el }) {
   injectStyles();
 
+  el.style.width = "100%";
+  el.style.display = "flex";
+
   const root = document.createElement("div");
   root.className = "aw-root";
+  root.style.width = "100%";
 
   const header = document.createElement("div");
   header.className = "aw-header";
@@ -221,6 +267,8 @@ function render({ model, el }) {
     const passages = parsePassages(model.get("passages_json"));
     const baseColor = model.get("base_highlight") || "#cfe8ff";
     const hoverColor = model.get("hover_highlight") || "#ffd166";
+    const rawLayout = model.get("layout");
+    const layout = normalizeLayout(rawLayout);
 
     if (!passages.length) {
       content.innerHTML = '<div class="aw-empty">No passages to display. Set passages_json to a non-empty JSON list.</div>';
@@ -228,7 +276,22 @@ function render({ model, el }) {
     }
 
     const group = document.createElement("div");
-    group.className = "aw-group";
+    const className = layout === "horizontal" ? "aw-group aw-horizontal" : "aw-group";
+    group.className = className;
+
+    // Inline layout styles make horizontal/vertical behavior deterministic
+    // even when notebook frontends isolate or cache stylesheet state.
+    if (layout === "horizontal") {
+      group.style.display = "grid";
+      group.style.gridTemplateColumns = `repeat(${Math.max(passages.length, 1)}, minmax(0, 1fr))`;
+      group.style.alignItems = "start";
+      group.style.columnGap = "12px";
+      group.style.rowGap = "12px";
+    } else {
+      group.style.display = "flex";
+      group.style.flexDirection = "column";
+      group.style.gap = "12px";
+    }
 
     passages.forEach((passage, index) => {
       group.appendChild(makePanel(passage, index));
@@ -243,6 +306,7 @@ function render({ model, el }) {
   refresh();
   model.on("change:title", refresh);
   model.on("change:passages_json", refresh);
+  model.on("change:layout", refresh);
   model.on("change:width", refresh);
   model.on("change:height", refresh);
   model.on("change:base_highlight", refresh);

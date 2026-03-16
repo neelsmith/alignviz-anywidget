@@ -13,7 +13,7 @@ class ParallelTextAlignWidget(anywidget.AnyWidget):
 			a shared identifier via data-align-id or id.
 		"""
 
-		_esm = Path(__file__).parent / "static" / "index.js"
+		_esm = (Path(__file__).parent / "static" / "index.js").read_text(encoding="utf-8")
 
 		title = traitlets.Unicode("Aligned Text Explorer").tag(sync=True)
 		passages_json = traitlets.Unicode("[]").tag(sync=True)
