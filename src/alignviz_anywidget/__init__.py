@@ -1,3 +1,3 @@
-from .widget import AlignViewer
+from .widget import AlignViewer, ParallelTextAlignWidget
 
-__all__ = ["AlignViewer"]
+__all__ = ["ParallelTextAlignWidget", "AlignViewer"]

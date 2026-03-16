@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.13"
+# requires-python = ">=3.10,<3.14"
 # dependencies = [
 #     "anywidget==0.9.21",
 #     "marimo>=0.20.4",
@@ -17,21 +17,22 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import importlib
+    import json
     import sys
     from pathlib import Path
 
-    #try:
-    #    from alignviz_anywidget import AlignViewer
-    #except (ImportError, AttributeError):
-    #    repo_src = Path(__file__).resolve().parents[1] / "src"
-    #    if str(repo_src) not in sys.path:
-    #        sys.path.insert(0, str(repo_src))
-    #    for name in list(sys.modules):
-    #        if name == "alignviz_anywidget" or name.startswith("alignviz_anywidget."):
-    #            del sys.modules[name]
-    #    importlib.invalidate_caches()
-    #    from alignviz_anywidget import AlignViewer
-    return
+    try:
+        from alignviz_anywidget import ParallelTextAlignWidget
+    except (ImportError, AttributeError):
+        repo_src = Path(__file__).resolve().parents[1] / "src"
+        if str(repo_src) not in sys.path:
+            sys.path.insert(0, str(repo_src))
+        for mod_name in list(sys.modules):
+            if mod_name == "alignviz_anywidget" or mod_name.startswith("alignviz_anywidget."):
+                del sys.modules[mod_name]
+        importlib.invalidate_caches()
+        from alignviz_anywidget import ParallelTextAlignWidget
+    return ParallelTextAlignWidget, json
 
 
 @app.cell
@@ -44,151 +45,81 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Static HTML display
+    ## Interactive anywidget demo
+
+    Hover any highlighted term to highlight all matching aligned terms across versions.
     """)
     return
 
 
 @app.cell
 def _():
-    import re
-
-    return (re,)
-
-
-@app.cell
-def _(re):
-    def generate_aligned_html(versions_data):
-        """
-        versions_data: List of dicts, e.g.:
-        [
-            {
-                "text": "Gallia est omnis divisa in partes tres",
-                "alignments": [["Gallia"], ["est", "divisa"], ["partes"]]
-            },
-            {
-                "text": "Gaul is divided into three parts",
-                "alignments": [["Gaul"], ["is", "divided"], ["parts"]]
-            }
-        ]
-        """
-        output_html_versions = []
-
-        for v_idx, version in enumerate(versions_data):
-            text = version["text"]
-            alignment_groups = version["alignments"]
-
-            # 1. Tokenize preserving whitespace/punctuation
-            # This regex captures words and the spaces between them separately
-            tokens = re.split(r'(\s+)', text)
-
-            # Track which tokens are already "claimed" by an alignment ID
-            # and keep a pointer to search forward for repeats
-            token_tags = [None] * len(tokens)
-            search_start_index = 0
-
-            for align_id, group in enumerate(alignment_groups):
-                for word in group:
-                    # Find the next available occurrence of this word
-                    found = False
-                    for i in range(search_start_index, len(tokens)):
-                        if tokens[i].strip() == word and token_tags[i] is None:
-                            token_tags[i] = f"align-{align_id}"
-                            # We don't update search_start_index here because 
-                            # words in the same group might be out of order 
-                            # or non-contiguous.
-                            found = True
-                            break
-
-                    if not found:
-                        # Fallback: search from beginning if not found ahead
-                        for i in range(0, len(tokens)):
-                            if tokens[i].strip() == word and token_tags[i] is None:
-                                token_tags[i] = f"align-{align_id}"
-                                break
-
-            # 2. Build HTML string
-            html_bits = []
-            for i, token in enumerate(tokens):
-                if token_tags[i]:
-                    html_bits.append(f'<span id="{token_tags[i]}" class="aligned-term">{token}</span>')
-                else:
-                    html_bits.append(token)
-
-            output_html_versions.append("".join(html_bits))
-
-        return output_html_versions
-
-
-    return (generate_aligned_html,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    ## Demo of static display
-    """)
-    return
-
-
-@app.cell
-def _():
-    inputdata = [
+    passages = [
         {
-            "text": "Gallia est omnis divisa in partes tres",
-            "alignments": [["Gallia"], ["est", "divisa"], ["partes"]]
+            "label": "Latin",
+            "html": """
+    <span data-align-id="a0" class="aligned-term">Gallia</span> est omnis
+    <span data-align-id="a1" class="aligned-term">divisa</span> in
+    <span data-align-id="a2" class="aligned-term">partes</span> tres
+    """,
         },
         {
-            "text": "Gaul is divided into three parts",
-            "alignments": [["Gaul"], ["is", "divided"], ["parts"]]
-        }
+            "label": "English",
+            "html": """
+    All of <span data-align-id="a0" class="aligned-term">Gaul</span>
+    <span data-align-id="a1" class="aligned-term">is</span>
+    <span data-align-id="a1" class="aligned-term">divided</span>
+    into three <span data-align-id="a2" class="aligned-term">parts</span>
+    """,
+        },
+        {
+            "label": "French",
+            "html": """
+    Toute la <span data-align-id="a0" class="aligned-term">Gaule</span>
+    <span data-align-id="a1" class="aligned-term">est</span>
+    <span data-align-id="a1" class="aligned-term">divisee</span>
+    en trois <span data-align-id="a2" class="aligned-term">parties</span>
+    """,
+        },
     ]
-    return (inputdata,)
+    return (passages,)
 
 
 @app.cell
-def _(generate_aligned_html, inputdata):
-    htmlout = generate_aligned_html(inputdata)
-    return (htmlout,)
+def _(ParallelTextAlignWidget, json, passages, mo):
+    # Horizontal layout: using mo.hstack with individual widgets per passage
+    h_widgets = [
+        ParallelTextAlignWidget(
+            title=passages[i]["label"],
+            passages_json=json.dumps([passages[i]]),
+            height="220px",
+            base_highlight="#cfe8ff",
+            hover_highlight="#ffcf66",
+        )
+        for i in range(len(passages))
+    ]
+    horizontal_layout = mo.hstack(h_widgets)
+
+    # Vertical layout: all passages stacked in one widget
+    vertical_layout = ParallelTextAlignWidget(
+        title="Aligned Terms (vertical/stacked)",
+        passages_json=json.dumps(passages),
+        height="360px",
+        base_highlight="#d9f4df",
+        hover_highlight="#ffd166",
+    )
+
+    return horizontal_layout, vertical_layout
 
 
 @app.cell
-def _(htmlout, mo):
-
-    columns_html = "".join(
-        [
-            f'<div class="version-col"><div class="version-content">{version_html}</div></div>'
-            for version_html in htmlout
-        ]
-    )
-
-    display = mo.Html(
-        f"""
-        <style>
-            .aligned-grid {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                gap: 1rem;
-                align-items: start;
-            }}
-            .version-col {{
-                border: 1px solid #d9e2ec;
-                border-radius: 8px;
-                background: #f8fbff;
-                padding: 0.9rem;
-                line-height: 1.65;
-            }}
-            .aligned-term {{
-                background-color: #cfe8ff;
-                border-radius: 3px;
-                padding: 0 0.1em;
-            }}
-        </style>
-        <div class="aligned-grid">{columns_html}</div>
-        """
-    )
-
-    display
+def _(mo, horizontal_layout, vertical_layout):
+    mo.vstack([
+        mo.md("### Horizontal Layout (side-by-side)"),
+        horizontal_layout,
+        mo.md("### Vertical Layout (stacked)"),
+        vertical_layout,
+    ])
     return
 
 

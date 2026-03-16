@@ -1,139 +1,251 @@
-// src/index.js
-function parseRows(raw) {
-  const lines = `${raw ?? ""}`.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0);
-  return lines.map((line, idx) => {
-    const [label, sequence] = line.split(/\s+/);
-    return {
-      id: idx + 1,
-      label: label ?? `seq_${idx + 1}`,
-      sequence: sequence ?? ""
-    };
-  });
+function parsePassages(raw) {
+	try {
+		const parsed = JSON.parse(raw || "[]");
+		return Array.isArray(parsed) ? parsed : [];
+	} catch {
+		return [];
+	}
 }
-function escapeHtml(value) {
-  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+
+function cssEscape(value) {
+	if (window.CSS && typeof window.CSS.escape === "function") {
+		return window.CSS.escape(value);
+	}
+
+	return String(value).replace(/[\\"']/g, "\\$&");
 }
-function renderTable(rows) {
-  const body = rows.map(
-    (row) => `
-        <tr>
-          <td class="av-label">${escapeHtml(row.label)}</td>
-          <td class="av-seq">${escapeHtml(row.sequence)}</td>
-        </tr>
-      `
-  ).join("");
-  return `
-    <table class="av-table">
-      <thead>
-        <tr>
-          <th>Label</th>
-          <th>Sequence</th>
-        </tr>
-      </thead>
-      <tbody>${body}</tbody>
-    </table>
-  `;
-}
+
+
+
 function injectStyles() {
-  if (document.getElementById("alignviz-anywidget-style")) {
-    return;
-  }
-  const style = document.createElement("style");
-  style.id = "alignviz-anywidget-style";
-  style.textContent = `
-    .av-root {
-      border: 1px solid #ced7e0;
-      border-radius: 10px;
-      background: linear-gradient(180deg, #f9fbfd 0%, #f3f7fa 100%);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+	if (document.getElementById("alignviz-anywidget-style")) {
+		return;
+	}
 
-    .av-header {
-      padding: 10px 14px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #253445;
-      background: #e8eff6;
-      border-bottom: 1px solid #ced7e0;
-    }
+	const style = document.createElement("style");
+	style.id = "alignviz-anywidget-style";
+	style.textContent = `
+		.aw-root {
+			border: 1px solid #d8e2ec;
+			border-radius: 12px;
+			background: linear-gradient(180deg, #fcfdff 0%, #f5f9ff 100%);
+			overflow: hidden;
+			font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			display: flex;
+			flex-direction: column;
+		}
 
-    .av-content {
-      padding: 10px 14px;
-      overflow: auto;
-    }
+		.aw-header {
+			padding: 10px 14px;
+			font-size: 0.95rem;
+			font-weight: 650;
+			color: #23374d;
+			background: #ebf2fa;
+			border-bottom: 1px solid #d8e2ec;
+		}
 
-    .av-table {
-      border-collapse: collapse;
-      width: 100%;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.86rem;
-    }
+		.aw-content {
+			padding: 12px;
+			overflow: auto;
+		}
 
-    .av-table th,
-    .av-table td {
-      text-align: left;
-      padding: 6px 8px;
-      border-bottom: 1px solid #d8e2ec;
-      white-space: pre;
-    }
+		.aw-group {
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
 
-    .av-table th {
-      position: sticky;
-      top: 0;
-      background: #eef4fa;
-      color: #30475d;
-      z-index: 1;
-    }
+		.aw-panel {
+			background: #f9fbff;
+			border: 1px solid #d5e2f0;
+			border-radius: 10px;
+			padding: 10px 12px;
+			line-height: 1.7;
+			color: #1d2a37;
+		}
 
-    .av-label {
-      color: #1e3d59;
-      min-width: 140px;
-    }
+		.aw-panel-title {
+			font-weight: 650;
+			margin-bottom: 8px;
+			color: #304860;
+			font-size: 0.86rem;
+			letter-spacing: 0.02em;
+			text-transform: uppercase;
+		}
 
-    .av-seq {
-      letter-spacing: 0.03em;
-      color: #1d2731;
-    }
+		.aw-term,
+		.aligned-term {
+			border-radius: 4px;
+			padding: 0 0.12em;
+			transition: background-color 110ms ease-out, color 110ms ease-out;
+			cursor: default;
+		}
 
-    .av-empty {
-      color: #5b6f82;
-      font-size: 0.9rem;
-      padding: 8px 0;
-    }
-  `;
-  document.head.appendChild(style);
+		.aw-empty {
+			color: #5b6f82;
+			font-size: 0.92rem;
+			padding: 8px;
+		}
+	`;
+
+	document.head.appendChild(style);
 }
+
+function makePanel(passage, index) {
+	const panel = document.createElement("section");
+	panel.className = "aw-panel";
+
+	const title = document.createElement("div");
+	title.className = "aw-panel-title";
+	title.textContent = passage.label || `Version ${index + 1}`;
+
+	const content = document.createElement("div");
+	content.className = "aw-panel-content";
+	content.innerHTML = passage.html || "";
+
+	panel.append(title, content);
+	return panel;
+}
+
+function collectAlignedTerms(root) {
+	const terms = root.querySelectorAll("[data-align-id], [id], .aligned-term");
+	const withId = [];
+	for (const term of terms) {
+		const id = term.getAttribute("data-align-id") || term.getAttribute("id");
+		term.classList.add("aw-term");
+		if (id) {
+			withId.push({ id, el: term });
+		}
+	}
+	return withId;
+}
+
+function attachHoverSync(root, withId, baseColor, hoverColor) {
+	for (const { el } of withId) {
+		el.style.backgroundColor = baseColor;
+	}
+
+	let activeId = null;
+
+	const applyHighlight = (alignId) => {
+		if (!alignId) {
+			return;
+		}
+
+		const escaped = cssEscape(alignId);
+		const matches = root.querySelectorAll(
+			`[data-align-id="${escaped}"], [id="${escaped}"]`,
+		);
+		for (const item of matches) {
+			item.style.backgroundColor = hoverColor;
+		}
+	};
+
+	const clearHighlight = (alignId) => {
+		if (!alignId) {
+			return;
+		}
+
+		const escaped = cssEscape(alignId);
+		const matches = root.querySelectorAll(
+			`[data-align-id="${escaped}"], [id="${escaped}"]`,
+		);
+		for (const item of matches) {
+			item.style.backgroundColor = baseColor;
+		}
+	};
+
+	const onOver = (event) => {
+		const target = event.target.closest("[data-align-id], [id]");
+		if (!target || !root.contains(target)) {
+			return;
+		}
+
+		const alignId = target.getAttribute("data-align-id") || target.getAttribute("id");
+		if (!alignId || alignId === activeId) {
+			return;
+		}
+
+		if (activeId) {
+			clearHighlight(activeId);
+		}
+		activeId = alignId;
+		applyHighlight(activeId);
+	};
+
+	const onOut = (event) => {
+		const related = event.relatedTarget;
+		if (related && root.contains(related)) {
+			return;
+		}
+
+		if (activeId) {
+			clearHighlight(activeId);
+			activeId = null;
+		}
+	};
+
+	root.addEventListener("mouseover", onOver);
+	root.addEventListener("mouseleave", onOut);
+
+	return () => {
+		root.removeEventListener("mouseover", onOver);
+		root.removeEventListener("mouseleave", onOut);
+	};
+}
+
 function render({ model, el }) {
-  injectStyles();
-  const root = document.createElement("div");
-  root.className = "av-root";
-  root.style.width = model.get("width") || "100%";
-  root.style.height = model.get("height") || "360px";
-  const header = document.createElement("div");
-  header.className = "av-header";
-  const content = document.createElement("div");
-  content.className = "av-content";
-  const refresh = () => {
-    header.textContent = model.get("title") || "Alignment Viewer";
-    const rows = parseRows(model.get("data"));
-    if (!rows.length) {
-      content.innerHTML = '<div class="av-empty">No alignment rows yet. Set the widget `data` trait.</div>';
+	injectStyles();
+
+	const root = document.createElement("div");
+	root.className = "aw-root";
+
+	const header = document.createElement("div");
+	header.className = "aw-header";
+
+	const content = document.createElement("div");
+	content.className = "aw-content";
+
+	root.append(header, content);
+	el.replaceChildren(root);
+
+	let disposeHoverSync = () => {};
+
+	const refresh = () => {
+		disposeHoverSync();
+
+		root.style.width = model.get("width") || "100%";
+		root.style.height = model.get("height") || "420px";
+		header.textContent = model.get("title") || "Aligned Text Explorer";
+
+		const passages = parsePassages(model.get("passages_json"));
+    const baseColor = model.get("base_highlight") || "#cfe8ff";
+    const hoverColor = model.get("hover_highlight") || "#ffd166";
+
+    if (!passages.length) {
+      content.innerHTML = '<div class="aw-empty">No passages to display. Set passages_json to a non-empty JSON list.</div>';
       return;
     }
-    content.innerHTML = renderTable(rows);
-  };
-  root.append(header, content);
-  el.replaceChildren(root);
-  refresh();
-  model.on("change:title", refresh);
-  model.on("change:data", refresh);
-  model.on("change:width", refresh);
-  model.on("change:height", refresh);
+
+    const group = document.createElement("div");
+    group.className = "aw-group";
+		passages.forEach((passage, index) => {
+			group.appendChild(makePanel(passage, index));
+		});
+
+		content.replaceChildren(group);
+
+		const withId = collectAlignedTerms(group);
+		disposeHoverSync = attachHoverSync(group, withId, baseColor, hoverColor);
+	};
+
+	refresh();
+	model.on("change:title", refresh);
+	model.on("change:passages_json", refresh);
+	model.on("change:width", refresh);
+	model.on("change:height", refresh);
+	model.on("change:base_highlight", refresh);
+	model.on("change:hover_highlight", refresh);
 }
-var index_default = { render };
-export {
-  index_default as default
-};
+
+export default { render };
