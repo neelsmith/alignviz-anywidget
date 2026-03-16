@@ -3,6 +3,9 @@ name: Publish to TestPyPI
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-n-publish:
     name: Build and publish to TestPyPI
@@ -20,7 +23,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: "pyproject.toml"
 
       - name: Set up Python
         run: uv python install
