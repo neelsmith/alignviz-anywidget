@@ -1,6 +1,6 @@
 import json
 
-from alignviz_anywidget import AlignViewer
+from alignviz_anywidget import AlignViewer, build_passages_from_versions
 
 
 def main() -> None:
@@ -51,6 +51,11 @@ def main() -> None:
     assert converted[0]["label"] == "Latin"
     assert "data-align-id=\"align-0\"" in converted[0]["html"]
     assert viewer2.layout == "vertical"
+
+    converted_via_helper = build_passages_from_versions(versions)
+    assert len(converted_via_helper) == 2
+    assert converted_via_helper[1]["label"] == "English"
+    assert "data-align-id=\"align-1\"" in converted_via_helper[1]["html"]
     print("AlignViewer smoke test passed")
 
 

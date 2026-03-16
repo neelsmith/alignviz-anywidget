@@ -82,6 +82,28 @@ def _versions_to_passages(versions: list[dict[str, Any]]) -> list[dict[str, str]
 	return passages
 
 
+def build_passages_from_versions(versions: list[dict[str, Any]]) -> list[dict[str, str]]:
+	"""Convert versions input into widget passages.
+
+	Input format:
+	[
+		{
+			"label": "optional label",
+			"text": "raw text",
+			"alignments": [["token1"], ["token2", "token3"]],
+		},
+		...
+	]
+
+	Output format:
+	[
+		{"label": "...", "html": "..."},
+		...
+	]
+	"""
+	return _versions_to_passages(versions)
+
+
 class ParallelTextAlignWidget(anywidget.AnyWidget):
 	"""Interactive aligned-text widget for notebook environments.
 
