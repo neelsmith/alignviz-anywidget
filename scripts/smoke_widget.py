@@ -26,6 +26,31 @@ def main() -> None:
     assert viewer.title == "Smoke Test"
     assert "Latin" in viewer.passages_json
     assert viewer.layout == "horizontal"
+
+    versions = [
+        {
+            "label": "Latin",
+            "text": "Gallia est omnis divisa in partes tres",
+            "alignments": [["Gallia"], ["est", "divisa"], ["partes"]],
+        },
+        {
+            "label": "English",
+            "text": "Gaul is divided into three parts",
+            "alignments": [["Gaul"], ["is", "divided"], ["parts"]],
+        },
+    ]
+
+    viewer2 = AlignViewer(
+        title="Versions Format",
+        versions=versions,
+        layout="vertical",
+    )
+
+    converted = json.loads(viewer2.passages_json)
+    assert len(converted) == 2
+    assert converted[0]["label"] == "Latin"
+    assert "data-align-id=\"align-0\"" in converted[0]["html"]
+    assert viewer2.layout == "vertical"
     print("AlignViewer smoke test passed")
 
 

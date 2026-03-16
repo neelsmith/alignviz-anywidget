@@ -39,12 +39,12 @@ def _(mo):
 
 
 @app.cell
-def _(ParallelTextAlignWidget, json, passages):
+def _(ParallelTextAlignWidget, versions_data):
     # Horizontal layout: single widget with layout="horizontal"
     # This preserves cross-version hover highlighting across side-by-side columns
     horizontal_layout = ParallelTextAlignWidget(
         title="Aligned Terms (horizontal/side-by-side)",
-        passages_json=json.dumps(passages),
+        versions=versions_data,
         layout="horizontal",
         width="100%",
         height="260px",
@@ -63,11 +63,11 @@ def _(horizontal_layout):
 
 
 @app.cell
-def _(ParallelTextAlignWidget, json, passages):
+def _(ParallelTextAlignWidget, versions_data):
     # Vertical layout: single widget with layout="vertical"
     vertical_layout = ParallelTextAlignWidget(
         title="Aligned Terms (vertical/stacked)",
-        passages_json=json.dumps(passages),
+        versions=versions_data,
         layout="vertical",
         width="100%",
         height="360px",
@@ -98,35 +98,24 @@ def _(mo):
 
 @app.cell
 def _():
-    passages = [
+    versions_data = [
         {
             "label": "Latin",
-            "html": """
-    <span data-align-id="a0" class="aligned-term">Gallia</span> est omnis
-    <span data-align-id="a1" class="aligned-term">divisa</span> in
-    <span data-align-id="a2" class="aligned-term">partes</span> tres
-    """,
+            "text": "Gallia est omnis divisa in partes tres",
+            "alignments": [["Gallia"], ["est", "divisa"], ["partes"]],
         },
         {
             "label": "English",
-            "html": """
-    All of <span data-align-id="a0" class="aligned-term">Gaul</span>
-    <span data-align-id="a1" class="aligned-term">is</span>
-    <span data-align-id="a1" class="aligned-term">divided</span>
-    into three <span data-align-id="a2" class="aligned-term">parts</span>
-    """,
+            "text": "All of Gaul is divided into three parts",
+            "alignments": [["Gaul"], ["is", "divided"], ["parts"]],
         },
         {
             "label": "French",
-            "html": """
-    Toute la <span data-align-id="a0" class="aligned-term">Gaule</span>
-    <span data-align-id="a1" class="aligned-term">est</span>
-    <span data-align-id="a1" class="aligned-term">divisee</span>
-    en trois <span data-align-id="a2" class="aligned-term">parties</span>
-    """,
+            "text": "Toute la Gaule est divisee en trois parties",
+            "alignments": [["Gaule"], ["est", "divisee"], ["parties"]],
         },
     ]
-    return (passages,)
+    return (versions_data,)
 
 
 @app.cell(hide_code=True)
@@ -140,7 +129,6 @@ def _(mo):
 @app.cell
 def _():
     import importlib
-    import json
     import sys
     from pathlib import Path
 
@@ -155,7 +143,7 @@ def _():
                 del sys.modules[mod_name]
         importlib.invalidate_caches()
         from alignviz_anywidget import ParallelTextAlignWidget
-    return ParallelTextAlignWidget, json
+    return (ParallelTextAlignWidget,)
 
 
 @app.cell
