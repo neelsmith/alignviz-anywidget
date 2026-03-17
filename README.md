@@ -2,95 +2,37 @@
 
 An `anywidget` project scaffold for building alignment visualization widgets used in marimo notebooks.
 
-This repo is organized similarly to `iiif-anywidget`:
 
-- Python source in `src/alignviz_anywidget`
-- JavaScript source in `js/src`
-- Bundled widget assets in `src/alignviz_anywidget/static`
-- Marimo examples in `marimo`
-- Smoke scripts in `scripts`
+```python
+from alignviz_anywidget import ParallelTextAlignWidget
 
-## Project layout
+versions_data = [
+        {
+            "label": "**Latin** _original_",
+            "text": "Gallia est omnis divisa in partes tres",
+            "alignments": [["Gallia"], ["est", "divisa"], ["partes"]],
+        },
+        {
+            "label": "**English** _translation_",
+            "text": "All of Gaul is divided into three parts",
+            "alignments": [["Gaul"], ["is", "divided"], ["parts"]],
+        },
+        {
+            "label": "**French** _traduction_",
+            "text": "Toute la Gaule est divisee en trois parties",
+            "alignments": [["Gaule"], ["est", "divisee"], ["parties"]],
+        },
+    ]
 
-```text
-.
-├── pyproject.toml
-├── js/
-│   ├── package.json
-│   └── src/index.js
-├── marimo/
-│   └── demo.py
-├── scripts/
-│   └── smoke_widget.py
-└── src/
-	└── alignviz_anywidget/
-		├── __init__.py
-		├── widget.py
-		└── static/
-			└── index.js
+ caesar = ParallelTextAlignWidget(
+        title="Caesar *BG* 1.1 (horizontal layout)",
+        versions=versions_data,
+        layout="horizontal",
+        width="100%",
+        height="260px",
+        base_highlight="#cfe8ff",
+        hover_highlight="#ffcf66",
+    )	
+
+	
 ```
-
-## 1) Create and activate a Python environment
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-```
-
-## 2) Install Python and JS dependencies
-
-```bash
-pip install -e ".[dev]"
-cd js
-npm install
-cd ..
-```
-
-## 3) Build widget frontend assets
-
-```bash
-cd js
-npm run build
-cd ..
-```
-
-For active development in one terminal:
-
-```bash
-cd js
-npm run dev
-```
-
-## 4) Run marimo demo
-
-In another terminal:
-
-```bash
-source .venv/bin/activate
-marimo run marimo/demo.py
-```
-
-## 5) Smoke test
-
-```bash
-python scripts/smoke_widget.py
-```
-
-## Packaging notes
-
-- `hatch-jupyter-builder` runs the JS build during wheel/sdist builds.
-- The static assets are included as shared data for notebook environments.
-
-Build a package:
-
-```bash
-python -m pip install build
-python -m build
-```
-
-## Next customization points
-
-- Add more synced traits in `src/alignviz_anywidget/widget.py`.
-- Implement richer alignment rendering in `js/src/index.js`.
-- Add additional marimo examples in `marimo/`.
